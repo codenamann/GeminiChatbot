@@ -35,7 +35,7 @@ const App = () => {
 
     try {
       // Connect to local backend
-      const response = await fetch(`${ServerURI}/chat, {
+      const response = await fetch(`${ServerURI}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
