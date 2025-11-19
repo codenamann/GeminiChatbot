@@ -51,6 +51,11 @@ app.post('/chat', async (req, res) => {
   }
 });
 
+app.get("/ping", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

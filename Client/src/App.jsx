@@ -9,6 +9,8 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
+  
+  const ServerURI = import.meta.env.VITE_SERVER_URI;
 
   // Auto-scroll to bottom when messages change
   const scrollToBottom = () => {
@@ -33,7 +35,7 @@ const App = () => {
 
     try {
       // Connect to local backend
-      const response = await fetch('http://localhost:5000/chat', {
+      const response = await fetch(ServerURI, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
