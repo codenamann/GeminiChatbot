@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 
 export default function BackendWakePage() {
   const [seconds, setSeconds] = useState(15);
   const BACKEND_URL = import.meta.env.VITE_SERVER_URI;
-
+  const navigate = useNavigate();
   function pingBackend() {
     return fetch(`${BACKEND_URL}/ping`, { method: "GET" })
       .then((res) => res.json())
@@ -17,7 +18,7 @@ export default function BackendWakePage() {
       const result = await pingBackend();
 
       if (result?.status === "ok") {
-        window.location.href = "/chat";
+        navigate("/chat");
         return;
       }
 
@@ -26,7 +27,7 @@ export default function BackendWakePage() {
 
         if (res?.status === "ok") {
           clearInterval(interval);
-          window.location.href = "/chat";
+          navigate("/chat");
         }
       }, 10000); // retry every 10 seconds
     }
