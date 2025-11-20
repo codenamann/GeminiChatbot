@@ -3,60 +3,80 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors()); // Enable CORS for frontend access
-app.use(express.json()); // Parse JSON bodies
+app.use(cors());
+// INCREASED LIMIT: Essential for handling Base64 images/PDFs
+app.use(express.json({ limit: '50mb' })); 
 
-// Initialize Gemini
-// WARNING: Make sure GEMINI_API_KEY is in your .env file
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const model = genAI.getGenerativeModel({ 
   model: "gemini-2.5-flash",
-  systemInstruction: "You are a simple, helpful chatbot. Respond clearly and concisely. Avoid hallucination."
+  systemInstruction: "You are NovaMind, an advanced AI assistant. You are helpful, creative, and capable of analyzing images and documents. Respond clearly."
 });
 
-// Routes
+// --- ROUTES ---
+
+// 1. Root Route (Health Check)
 app.get('/', (req, res) => {
-  res.send('Gemini Chatbot Server is Running');
+  res.send('NovaMind AI Server is Active');
 });
 
+// 2. Ping Route (Wake-up Call)
+// Frontend calls this on load to wake up free-tier servers
+app.get('/ping', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date() });
+});
+
+// 3. Chat Route
 app.post('/chat', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, history, file } = req.body;
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+    if (!message && !file) {
+      return res.status(400).json({ error: 'Message or file is required' });
     }
 
-    // Start a chat session (history is not persisted in DB for this simple demo, 
-    // but sendMessage preserves context for the immediate turn if we used chat.sendMessage,
-    // however, for a stateless request we just generate content based on the input).
-    // To keep it simple as requested:
-    const result = await model.generateContent(message);
+    // Prepare Chat History for Context
+    const chatHistory = history.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }]
+    }));
+
+    const chat = model.startChat({
+      history: chatHistory,
+      generationConfig: { maxOutputTokens: 2000 },
+    });
+
+    // Construct Message
+    const currentMessageParts = [];
+    if (file) {
+      currentMessageParts.push({
+        inlineData: { data: file.data, mimeType: file.mimeType }
+      });
+    }
+    if (message) {
+      currentMessageParts.push({ text: message });
+    }
+
+    // Generate
+    const result = await chat.sendMessage(currentMessageParts);
     const response = await result.response;
     const text = response.text();
 
     res.json({ reply: text });
 
   } catch (error) {
-    console.error('Error communicating with Gemini:', error);
-    res.status(500).json({ error: 'Failed to generate response', details: error.message });
+    console.error('Backend Error:', error);
+    res.status(500).json({ error: 'Failed to process request', details: error.message });
   }
 });
 
-app.get("/ping", (req, res) => {
-  res.json({ status: "ok" });
-});
-
-
-// Start Server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`NovaMind Server running on http://localhost:${PORT}`);
 });
