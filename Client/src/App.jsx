@@ -17,7 +17,7 @@ const App = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   
-  const ServerURI = 'http://localhost:5000';
+  const ServerURI = import.meta.env.VITE_SERVER_URI;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
